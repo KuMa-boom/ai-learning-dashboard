@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code マルチエージェント構成</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@300;400;700&display=swap');
+
+  :root {
+    --bg: #080c14;
+    --grid: rgba(99,179,237,0.04);
+    --hub-color: #63b3ed;
+    --sec-color: #68d391;
+    --res-color: #b794f4;
+    --dev-color: #f6ad55;
+    --mkt-color: #fc8181;
+    --text: #e2e8f0;
+    --dim: #718096;
+    --card-bg: rgba(255,255,255,0.03);
+    --card-border: rgba(255,255,255,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px 60px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 50px;
+    animation: fadeDown 0.8s ease both;
+  }
+
+  header .eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--hub-color);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    opacity: 0.8;
+  }
+
+  header h1 {
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+
+  header h1 span {
+    color: var(--hub-color);
+  }
+
+  /* HUB NODE */
+  .hub-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0;
+    animation: fadeDown 0.9s ease 0.1s both;
+  }
+
+  .hub-node {
+    background: rgba(99,179,237,0.07);
+    border: 1.5px solid var(--hub-color);
+    border-radius: 14px;
+    padding: 20px 36px;
+    width: 300px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 30px rgba(99,179,237,0.12), inset 0 0 20px rgba(99,179,237,0.04);
+  }
+
+  .hub-node:hover {
+    box-shadow: 0 0 50px rgba(99,179,237,0.25), inset 0 0 30px rgba(99,179,237,0.08);
+    transform: translateY(-2px);
+  }
+
+  .hub-node .dots {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .dot.red { background: #fc8181; }
+  .dot.yellow { background: #f6e05e; }
+  .dot.green { background: #68d391; }
+
+  .hub-node .title {
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--hub-color);
+    margin-bottom: 4px;
+  }
+
+  .hub-node .subtitle {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: rgba(99,179,237,0.6);
+  }
+
+  .hub-node .badge {
+    position: absolute;
+    top: -10px;
+    right: 16px;
+    background: var(--hub-color);
+    color: var(--bg);
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  /* CONNECTOR */
+  .connector-area {
+    display: flex;
+    justify-content: center;
+    position: relative;
+    height: 60px;
+    animation: fadeIn 1s ease 0.3s both;
+  }
+
+  .connector-svg {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* AGENTS GRID */
+  .agents-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    animation: fadeUp 1s ease 0.4s both;
+  }
+
+  @media (max-width: 600px) {
+    .agents-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .agent-card {
+    background: var(--card-bg);
+    border: 1.5px solid var(--card-border);
+    border-radius: 12px;
+    padding: 18px 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .agent-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+  }
+
+  .agent-card:hover {
+    transform: translateY(-4px);
+  }
+
+  .agent-card:hover::before {
+    opacity: 1;
+  }
+
+  .agent-card.sec { border-color: rgba(104,211,145,0.25); }
+  .agent-card.sec::before { background: var(--sec-color); }
+  .agent-card.sec:hover { box-shadow: 0 8px 30px rgba(104,211,145,0.15); border-color: rgba(104,211,145,0.5); }
+
+  .agent-card.res { border-color: rgba(183,148,244,0.25); }
+  .agent-card.res::before { background: var(--res-color); }
+  .agent-card.res:hover { box-shadow: 0 8px 30px rgba(183,148,244,0.15); border-color: rgba(183,148,244,0.5); }
+
+  .agent-card.dev { border-color: rgba(246,173,85,0.25); }
+  .agent-card.dev::before { background: var(--dev-color); }
+  .agent-card.dev:hover { box-shadow: 0 8px 30px rgba(246,173,85,0.15); border-color: rgba(246,173,85,0.5); }
+
+  .agent-card.mkt { border-color: rgba(252,129,129,0.25); }
+  .agent-card.mkt::before { background: var(--mkt-color); }
+  .agent-card.mkt:hover { box-shadow: 0 8px 30px rgba(252,129,129,0.15); border-color: rgba(252,129,129,0.5); }
+
+  .agent-icon {
+    font-size: 22px;
+    margin-bottom: 10px;
+  }
+
+  .agent-name {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+
+  .agent-card.sec .agent-name { color: var(--sec-color); }
+  .agent-card.res .agent-name { color: var(--res-color); }
+  .agent-card.dev .agent-name { color: var(--dev-color); }
+  .agent-card.mkt .agent-name { color: var(--mkt-color); }
+
+  .agent-role {
+    font-size: 11px;
+    color: var(--dim);
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--dim);
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+
+  .status-dot.active { animation: pulse 2s infinite; }
+  .status-dot.loading { animation: spin-pulse 1.5s infinite; }
+  .status-dot.idle { opacity: 0.4; }
+
+  .sec .status-dot { background: var(--sec-color); }
+  .res .status-dot { background: var(--res-color); }
+  .dev .status-dot { background: var(--dev-color); }
+  .mkt .status-dot { background: var(--mkt-color); }
+
+  /* FLOW SECTION */
+  .flow-section {
+    margin-top: 40px;
+    animation: fadeUp 1s ease 0.6s both;
+  }
+
+  .flow-section h2 {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .flow-steps {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .flow-step {
+    flex: 1;
+    min-width: 130px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 14px 12px;
+    position: relative;
+  }
+
+  .flow-step + .flow-step {
+    margin-left: 10px;
+  }
+
+  .flow-step + .flow-step::before {
+    content: '→';
+    position: absolute;
+    left: -14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--dim);
+    font-size: 13px;
+  }
+
+  .flow-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--hub-color);
+    margin-bottom: 6px;
+    opacity: 0.7;
+  }
+
+  .flow-title {
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .flow-desc {
+    font-size: 10px;
+    color: var(--dim);
+    line-height: 1.5;
+  }
+
+  /* DETAIL PANEL */
+  .detail-panel {
+    margin-top: 30px;
+    background: rgba(99,179,237,0.04);
+    border: 1px solid rgba(99,179,237,0.15);
+    border-radius: 12px;
+    padding: 20px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    animation: fadeUp 1s ease 0.8s both;
+  }
+
+  .detail-panel .label {
+    color: var(--hub-color);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    opacity: 0.8;
+  }
+
+  .code-block {
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 11px;
+    line-height: 1.9;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .code-comment { color: #4a5568; }
+  .code-key { color: var(--hub-color); }
+  .code-val { color: var(--sec-color); }
+  .code-str { color: var(--res-color); }
+  .code-fn { color: var(--dev-color); }
+
+  /* ANIMATIONS */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  @keyframes spin-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  @keyframes data-flow {
+    0% { stroke-dashoffset: 200; opacity: 0.2; }
+    50% { opacity: 1; }
+    100% { stroke-dashoffset: 0; opacity: 0.2; }
+  }
+
+  .flow-line {
+    stroke-dasharray: 6 4;
+    stroke-dashoffset: 200;
+    animation: data-flow 2s linear infinite;
+  }
+
+  .flow-line-2 { animation-delay: 0.5s; }
+  .flow-line-3 { animation-delay: 1s; }
+  .flow-line-4 { animation-delay: 1.5s; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="eyebrow">Claude Code Architecture</div>
+    <h1>マルチエージェント<span>構成</span>の仕組み</h1>
+  </header>
+
+  <!-- HUB -->
+  <div class="hub-wrapper">
+    <div class="hub-node">
+      <div class="badge">ORCHESTRATOR</div>
+      <div class="dots">
+        <div class="dot red"></div>
+        <div class="dot yellow"></div>
+        <div class="dot green"></div>
+      </div>
+      <div class="title">Claude Code (Hub)</div>
+      <div class="subtitle">> Dispatching tasks...</div>
+    </div>
+  </div>
+
+  <!-- CONNECTORS -->
+  <div class="connector-area">
+    <svg class="connector-svg" viewBox="0 0 900 60" preserveAspectRatio="none">
+      <!-- Vertical stem -->
+      <line x1="450" y1="0" x2="450" y2="30" stroke="rgba(99,179,237,0.3)" stroke-width="1.5"/>
+      <!-- Horizontal bar -->
+      <line x1="112" y1="30" x2="788" y2="30" stroke="rgba(99,179,237,0.2)" stroke-width="1.5"/>
+      <!-- Drop lines to each agent -->
+      <line x1="112" y1="30" x2="112" y2="60" stroke="rgba(104,211,145,0.4)" stroke-width="1.5"/>
+      <line x1="337" y1="30" x2="337" y2="60" stroke="rgba(183,148,244,0.4)" stroke-width="1.5"/>
+      <line x1="562" y1="30" x2="562" y2="60" stroke="rgba(246,173,85,0.4)" stroke-width="1.5"/>
+      <line x1="788" y1="30" x2="788" y2="60" stroke="rgba(252,129,129,0.4)" stroke-width="1.5"/>
+
+      <!-- Animated flow lines -->
+      <line class="flow-line" x1="450" y1="0" x2="112" y2="60" stroke="rgba(104,211,145,0.6)" stroke-width="1.5" fill="none"/>
+      <line class="flow-line flow-line-2" x1="450" y1="0" x2="337" y2="60" stroke="rgba(183,148,244,0.6)" stroke-width="1.5" fill="none"/>
+      <line class="flow-line flow-line-3" x1="450" y1="0" x2="562" y2="60" stroke="rgba(246,173,85,0.6)" stroke-width="1.5" fill="none"/>
+      <line class="flow-line flow-line-4" x1="450" y1="0" x2="788" y2="60" stroke="rgba(252,129,129,0.6)" stroke-width="1.5" fill="none"/>
+    </svg>
+  </div>
+
+  <!-- AGENTS -->
+  <div class="agents-grid">
+    <div class="agent-card sec">
+      <div class="agent-icon">📋</div>
+      <div class="agent-name">秘書 AI</div>
+      <div class="agent-role">タスク管理<br>アイデア整理</div>
+      <div class="status-indicator">
+        <div class="status-dot active"></div>
+        <span>ACTIVE</span>
+      </div>
+    </div>
+    <div class="agent-card res">
+      <div class="agent-icon">🔍</div>
+      <div class="agent-name">リサーチ AI</div>
+      <div class="agent-role">市場調査<br>競合分析</div>
+      <div class="status-indicator">
+        <div class="status-dot loading"></div>
+        <span>RUNNING</span>
+      </div>
+    </div>
+    <div class="agent-card dev">
+      <div class="agent-icon">⚙️</div>
+      <div class="agent-name">開発 AI</div>
+      <div class="agent-role">自動化ツール<br>コード生成</div>
+      <div class="status-indicator">
+        <div class="status-dot loading"></div>
+        <span>RUNNING</span>
+      </div>
+    </div>
+    <div class="agent-card mkt">
+      <div class="agent-icon">📣</div>
+      <div class="agent-name">マーケ AI</div>
+      <div class="agent-role">SNS戦略<br>投稿案作成</div>
+      <div class="status-indicator">
+        <div class="status-dot idle"></div>
+        <span>IDLE</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOW STEPS -->
+  <div class="flow-section">
+    <h2>// 実行フロー</h2>
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="flow-num">STEP 01</div>
+        <div class="flow-title">入力受付</div>
+        <div class="flow-desc">Hubがユーザー指示を解析・分解</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">STEP 02</div>
+        <div class="flow-title">タスク振り分け</div>
+        <div class="flow-desc">Task()で各サブAIにspawn</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">STEP 03</div>
+        <div class="flow-title">並列実行</div>
+        <div class="flow-desc">各AIが独立コンテキストで処理</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">STEP 04</div>
+        <div class="flow-title">結果統合</div>
+        <div class="flow-desc">Hubが出力をまとめて返答</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE EXAMPLE -->
+  <div class="detail-panel">
+    <div class="label">// CLAUDE.md — Hub設定イメージ</div>
+    <div class="code-block">
+<span class="code-comment"># CLAUDE.md（プロジェクトルートに配置）</span>
+
+<span class="code-key">role</span>: <span class="code-val">Orchestrator Hub</span>
+
+<span class="code-key">agents</span>:
+  - <span class="code-val">秘書AI</span>  <span class="code-comment">→ タスク管理・整理が必要な時</span>
+  - <span class="code-val">リサーチAI</span> <span class="code-comment">→ 調査・情報収集が必要な時</span>
+  - <span class="code-val">開発AI</span>  <span class="code-comment">→ コード生成・実装が必要な時</span>
+  - <span class="code-val">マーケAI</span> <span class="code-comment">→ 文章・SNS投稿が必要な時</span>
+
+<span class="code-comment"># Hubの動作ルール</span>
+<span class="code-fn">dispatch_rule</span>: |
+  指示を受けたら適切なAgentに <span class="code-str">Task()</span> で投げる
+  複数必要なら並列でspawnしてよい
+  結果を受け取りまとめて返答する
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,94 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useLearningStore } from "@/store/learningStore";
+import { weeks, phases } from "@/data/curriculum";
+import MetricCards from "./MetricCards";
+import PhaseSection from "./PhaseSection";
+import CertSection from "./CertSection";
+
+function getCurrentWeekId(): number | null {
+  const today = new Date();
+  // Find the week whose date is closest to today but not in the future
+  // We map dates to approximate timestamps for 2026
+  const dateMap: Record<number, Date> = {
+    1:  new Date("2026-04-05"),
+    2:  new Date("2026-04-12"),
+    3:  new Date("2026-04-19"),
+    4:  new Date("2026-04-26"),
+    5:  new Date("2026-05-03"),
+    6:  new Date("2026-05-10"),
+    7:  new Date("2026-05-17"),
+    8:  new Date("2026-06-07"),
+    9:  new Date("2026-06-21"),
+    10: new Date("2026-07-12"),
+    11: new Date("2026-07-25"),
+    12: new Date("2026-08-09"),
+    13: new Date("2026-08-23"),
+    14: new Date("2026-10-04"),
+    15: new Date("2026-11-01"),
+  };
+
+  let currentId: number | null = null;
+  for (let i = 1; i <= 15; i++) {
+    if (today >= dateMap[i]) {
+      currentId = i;
+    }
+  }
+  return currentId;
+}
+
+export default function Dashboard() {
+  const { hydrate } = useLearningStore();
+  const [hydrated, setHydrated] = useState(false);
+  const [currentWeekId, setCurrentWeekId] = useState<number | null>(null);
+
+  useEffect(() => {
+    hydrate();
+    setCurrentWeekId(getCurrentWeekId());
+    setHydrated(true);
+  }, [hydrate]);
+
+  if (!hydrated) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="text-white/50 text-sm">読み込み中...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-950 text-white">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-white mb-1">AI学習ダッシュボード</h1>
+          <p className="text-sm text-white/50">2026年 学習ロードマップ | 15週間カリキュラム</p>
+        </div>
+
+        {/* Metric Cards */}
+        <div className="mb-6">
+          <MetricCards />
+        </div>
+
+        {/* Phase Sections */}
+        <div className="mb-6 flex flex-col gap-4">
+          {phases.map((phase) => {
+            const phaseWeeks = weeks.filter((w) => w.phase === phase.id);
+            return (
+              <PhaseSection
+                key={phase.id}
+                phase={phase}
+                weeks={phaseWeeks}
+                currentWeekId={currentWeekId}
+              />
+            );
+          })}
+        </div>
+
+        {/* Cert Section */}
+        <CertSection />
+      </div>
+    </div>
+  );
+}

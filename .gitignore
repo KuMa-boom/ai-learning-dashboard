@@ -1,0 +1,17 @@
+# Dependencies
+ai-learning-dashboard/node_modules/
+
+# Next.js build output
+ai-learning-dashboard/.next/
+ai-learning-dashboard/out/
+
+# Vercel
+ai-learning-dashboard/.vercel/
+
+# Environment variables
+.env
+.env.local
+.env*.local
+
+# Local Claude settings (personal overrides)
+.claude/settings.local.json
