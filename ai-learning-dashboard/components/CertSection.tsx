@@ -11,7 +11,7 @@ const ICON_COLORS: Record<string, string> = {
 };
 
 export default function CertSection() {
-  const { isCertEarned } = useLearningStore();
+  const completedWeeks = useLearningStore((s) => s.completedWeeks);
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/5 p-4">
@@ -24,26 +24,23 @@ export default function CertSection() {
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {certs.map((cert) => {
-          const earned = isCertEarned(cert.weekTarget);
-          const iconColor = ICON_COLORS[cert.icon] || "#378ADD";
+          const earned = completedWeeks.has(cert.weekTarget);
+          const iconColor = ICON_COLORS[cert.icon] ?? "#378ADD";
           return (
             <div
               key={cert.name}
               className={`
                 flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all duration-200
-                ${earned
-                  ? "border-white/20 bg-white/10"
-                  : "border-white/5 bg-white/3 opacity-60"
-                }
+                ${earned ? "border-white/20 bg-white/10" : "border-white/5 bg-white/3 opacity-60"}
               `}
             >
               {/* Icon */}
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
                 style={{
-                  backgroundColor: earned ? iconColor + "33" : "#ffffff11",
+                  backgroundColor: earned ? `${iconColor}33` : "#ffffff11",
                   color: earned ? iconColor : "#ffffff44",
-                  border: `1px solid ${earned ? iconColor + "66" : "#ffffff11"}`,
+                  border: `1px solid ${earned ? `${iconColor}66` : "#ffffff11"}`,
                 }}
               >
                 {cert.icon}

@@ -6,34 +6,31 @@ import { weeks, phases } from "@/data/curriculum";
 import MetricCards from "./MetricCards";
 import PhaseSection from "./PhaseSection";
 import CertSection from "./CertSection";
+import WeekModal from "./WeekModal";
+
+const DATE_MAP: Record<number, Date> = {
+  1:  new Date("2026-04-05"),
+  2:  new Date("2026-04-12"),
+  3:  new Date("2026-04-19"),
+  4:  new Date("2026-04-26"),
+  5:  new Date("2026-05-03"),
+  6:  new Date("2026-05-10"),
+  7:  new Date("2026-05-17"),
+  8:  new Date("2026-06-07"),
+  9:  new Date("2026-06-21"),
+  10: new Date("2026-07-12"),
+  11: new Date("2026-07-25"),
+  12: new Date("2026-08-09"),
+  13: new Date("2026-08-23"),
+  14: new Date("2026-10-04"),
+  15: new Date("2026-11-01"),
+};
 
 function getCurrentWeekId(): number | null {
   const today = new Date();
-  // Find the week whose date is closest to today but not in the future
-  // We map dates to approximate timestamps for 2026
-  const dateMap: Record<number, Date> = {
-    1:  new Date("2026-04-05"),
-    2:  new Date("2026-04-12"),
-    3:  new Date("2026-04-19"),
-    4:  new Date("2026-04-26"),
-    5:  new Date("2026-05-03"),
-    6:  new Date("2026-05-10"),
-    7:  new Date("2026-05-17"),
-    8:  new Date("2026-06-07"),
-    9:  new Date("2026-06-21"),
-    10: new Date("2026-07-12"),
-    11: new Date("2026-07-25"),
-    12: new Date("2026-08-09"),
-    13: new Date("2026-08-23"),
-    14: new Date("2026-10-04"),
-    15: new Date("2026-11-01"),
-  };
-
   let currentId: number | null = null;
   for (let i = 1; i <= 15; i++) {
-    if (today >= dateMap[i]) {
-      currentId = i;
-    }
+    if (today >= DATE_MAP[i]) currentId = i;
   }
   return currentId;
 }
@@ -42,6 +39,7 @@ export default function Dashboard() {
   const { hydrate } = useLearningStore();
   const [hydrated, setHydrated] = useState(false);
   const [currentWeekId, setCurrentWeekId] = useState<number | null>(null);
+  const [modalWeekId, setModalWeekId] = useState<number | null>(null);
 
   useEffect(() => {
     hydrate();
@@ -81,6 +79,7 @@ export default function Dashboard() {
                 phase={phase}
                 weeks={phaseWeeks}
                 currentWeekId={currentWeekId}
+                onOpenModal={setModalWeekId}
               />
             );
           })}
@@ -89,6 +88,15 @@ export default function Dashboard() {
         {/* Cert Section */}
         <CertSection />
       </div>
+
+      {/* Week Detail Modal */}
+      {modalWeekId !== null && (
+        <WeekModal
+          weekId={modalWeekId}
+          onClose={() => setModalWeekId(null)}
+          onOpenWeek={setModalWeekId}
+        />
+      )}
     </div>
   );
 }

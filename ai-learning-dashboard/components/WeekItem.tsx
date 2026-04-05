@@ -23,17 +23,19 @@ interface Props {
   week: Week;
   phaseColor: string;
   isCurrentWeek: boolean;
+  onOpenModal: (weekId: number) => void;
 }
 
-export default function WeekItem({ week, phaseColor, isCurrentWeek }: Props) {
-  const { toggleWeek, isWeekCompleted } = useLearningStore();
-  const completed = isWeekCompleted(week.id);
+export default function WeekItem({ week, phaseColor, isCurrentWeek, onOpenModal }: Props) {
+  const completed = useLearningStore((s) => s.completedWeeks.has(week.id));
 
   return (
-    <div
-      onClick={() => toggleWeek(week.id)}
+    <button
+      type="button"
+      aria-label={`Week ${week.id}: ${week.label}の詳細を開く`}
+      onClick={() => onOpenModal(week.id)}
       className={`
-        flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer
+        w-full flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer text-left
         transition-all duration-200 select-none
         ${completed
           ? "bg-white/5 opacity-60"
@@ -87,6 +89,9 @@ export default function WeekItem({ week, phaseColor, isCurrentWeek }: Props) {
           今週
         </span>
       )}
-    </div>
+
+      {/* Hint */}
+      <span className="text-xs text-white/25 flex-shrink-0 hidden sm:block">詳細 →</span>
+    </button>
   );
 }

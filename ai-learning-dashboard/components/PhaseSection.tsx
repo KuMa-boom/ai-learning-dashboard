@@ -8,11 +8,14 @@ interface Props {
   phase: Phase;
   weeks: Week[];
   currentWeekId: number | null;
+  onOpenModal: (weekId: number) => void;
 }
 
-export default function PhaseSection({ phase, weeks, currentWeekId }: Props) {
-  const { getPhaseProgress } = useLearningStore();
-  const progress = getPhaseProgress(phase.id);
+export default function PhaseSection({ phase, weeks, currentWeekId, onOpenModal }: Props) {
+  const progress = useLearningStore((s) => {
+    const completed = weeks.filter((w) => s.completedWeeks.has(w.id));
+    return Math.round((completed.length / weeks.length) * 100);
+  });
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
@@ -50,6 +53,7 @@ export default function PhaseSection({ phase, weeks, currentWeekId }: Props) {
             week={week}
             phaseColor={phase.color}
             isCurrentWeek={week.id === currentWeekId}
+            onOpenModal={onOpenModal}
           />
         ))}
       </div>
