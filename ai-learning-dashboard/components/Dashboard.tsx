@@ -9,21 +9,21 @@ import CertSection from "./CertSection";
 import WeekModal from "./WeekModal";
 
 const DATE_MAP: Record<number, Date> = {
-  1:  new Date("2026-04-05"),
-  2:  new Date("2026-04-12"),
-  3:  new Date("2026-04-19"),
-  4:  new Date("2026-04-26"),
-  5:  new Date("2026-05-03"),
-  6:  new Date("2026-05-10"),
-  7:  new Date("2026-05-17"),
-  8:  new Date("2026-06-07"),
-  9:  new Date("2026-06-21"),
-  10: new Date("2026-07-12"),
-  11: new Date("2026-07-25"),
-  12: new Date("2026-08-09"),
-  13: new Date("2026-08-23"),
-  14: new Date("2026-10-04"),
-  15: new Date("2026-11-01"),
+  1:  new Date(2026, 3,  5),   // 2026-04-05
+  2:  new Date(2026, 3,  12),  // 2026-04-12
+  3:  new Date(2026, 3,  19),  // 2026-04-19
+  4:  new Date(2026, 3,  26),  // 2026-04-26
+  5:  new Date(2026, 4,  3),   // 2026-05-03
+  6:  new Date(2026, 4,  10),  // 2026-05-10
+  7:  new Date(2026, 4,  17),  // 2026-05-17
+  8:  new Date(2026, 5,  7),   // 2026-06-07
+  9:  new Date(2026, 5,  21),  // 2026-06-21
+  10: new Date(2026, 6,  12),  // 2026-07-12
+  11: new Date(2026, 6,  25),  // 2026-07-25
+  12: new Date(2026, 7,  9),   // 2026-08-09
+  13: new Date(2026, 7,  23),  // 2026-08-23
+  14: new Date(2026, 9,  4),   // 2026-10-04
+  15: new Date(2026, 10, 1),   // 2026-11-01
 };
 
 function getCurrentWeekId(): number | null {
@@ -92,6 +92,7 @@ export default function Dashboard() {
       {/* Week Detail Modal */}
       {modalWeekId !== null && (
         <WeekModal
+          key={modalWeekId}
           weekId={modalWeekId}
           onClose={() => setModalWeekId(null)}
           onOpenWeek={setModalWeekId}
