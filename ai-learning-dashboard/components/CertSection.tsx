@@ -31,7 +31,7 @@ export default function CertSection() {
               key={cert.name}
               className={`
                 flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all duration-200
-                ${earned ? "border-white/20 bg-white/10" : "border-white/5 bg-white/3 opacity-60"}
+                ${earned ? "border-white/20 bg-white/10" : "border-white/5 bg-white/5 opacity-60"}
               `}
             >
               {/* Icon */}
